@@ -17,36 +17,51 @@ in {
   };
 
   config = mkIf cfg.enable {
+    environment.systemPackages = [
+      cfg.package
+    ];
     systemd.services.littlesnitch = {
-      description = "Little Snitch for Linux Daemon";
-      after = ["network.target"];
+      description = "Little Snitch network monitor daemon";
+      after = ["sysinit.target"];
       wantedBy = ["multi-user.target"];
+      unitConfig = {
+        AssertCapability = [
+          "CAP_BPF"
+          "CAP_NET_ADMIN"
+          "CAP_PERFMON"
+          "CAP_SYS_RESOURCE"
+        ];
+      };
 
       serviceConfig = {
-        ExecStart = "${cfg.package}/bin/littlesnitch";
-        Restart = "always";
-        RestartSec = "5";
+        Type = "exec";
+        ExecStart = "${cfg.package}/bin/littlesnitch --daemon";
+        Restart = "on-failure";
+        RestartSec = "5s";
 
-        # Little Snitch needs eBPF capabilities
         CapabilityBoundingSet = [
-          "CAP_SYS_ADMIN"
-          "CAP_NET_ADMIN"
-          "CAP_NET_RAW"
           "CAP_BPF"
           "CAP_PERFMON"
+          "CAP_NET_ADMIN"
+          "CAP_SYS_RESOURCE"
         ];
-        AmbientCapabilities = [
-          "CAP_SYS_ADMIN"
-          "CAP_NET_ADMIN"
-          "CAP_NET_RAW"
-          "CAP_BPF"
-          "CAP_PERFMON"
+        MemoryDenyWriteExecute = true;
+        NoNewPrivileges = true;
+        PrivateDevices = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectProc = "noaccess";
+        ProtectSystem = "full";
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
         ];
 
-        # Hardening (Some of these might need tuning based on binary needs)
-        ProtectSystem = "full";
-        ProtectHome = "read-only";
-        NoNewPrivileges = true;
+        StandardOutput = "null";
+        StandardError = "journal";
       };
     };
   };

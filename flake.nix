@@ -9,7 +9,7 @@
     self,
     nixpkgs,
   }: let
-    supportedSystems = ["x86_64-linux"];
+    supportedSystems = ["x86_64-linux" "aarch64-linux" "ppc64le-linux" "riscv64-linux"];
     pkgsBySystem = nixpkgs.lib.getAttrs supportedSystems nixpkgs.legacyPackages;
     forAllPkgs = fn: nixpkgs.lib.mapAttrs (system: pkgs: (fn system pkgs)) pkgsBySystem;
   in {
@@ -21,8 +21,16 @@
     });
 
     nixosModules = {
-      default = import ./modules/littlesnitch.nix;
-      littlesnitch = import ./modules/littlesnitch.nix;
+      default = self.nixosModules.littlesnitch;
+      littlesnitch = {
+        options,
+        config,
+        pkgs,
+        ...
+      }: {
+        imports = [./modules/littlesnitch.nix];
+        config.services.littlesnitch.package = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      };
     };
 
     overlays.default = final: prev: {
@@ -31,7 +39,11 @@
 
     devShells = forAllPkgs (system: pkgs: {
       default = pkgs.mkShell {
-        packages = [pkgs.nix-update];
+        packages = [
+          pkgs.babashka
+          pkgs.clj-kondo
+          pkgs.cljfmt
+        ];
       };
     });
   };

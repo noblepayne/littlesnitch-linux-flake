@@ -1,1 +1,4 @@
+.version
 result
+.clj-kondo
+.clojure-mcp

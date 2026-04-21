@@ -1,0 +1,52 @@
+name: Auto Update
+
+on:
+  schedule:
+    - cron: "0 0,12 * * *" # Twice daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Get current version
+        run: |
+          OLD_VERSION=$(grep 'version =' pkgs/sources.nix | cut -d'"' -f2)
+          echo "OLD_VERSION=$OLD_VERSION" >> $GITHUB_ENV
+
+      - name: Run update script
+        id: update
+        env:
+          NIXPKGS_ALLOW_UNFREE: 1
+        run: |
+          # Run the scraper via nix develop to ensure babashka is available
+          chmod +x ./scripts/update.sh
+          nix develop --impure --command ./scripts/update.sh
+
+      - name: Prepare commit message
+        id: msg
+        run: |
+          if [ -f .version ]; then
+            NEW_VERSION=$(cat .version)
+            echo "commit_message=littlesnitch: ${{ env.OLD_VERSION }} -> $NEW_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "commit_message=chore: automated update check" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Auto-commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "${{ steps.msg.outputs.commit_message }}"
+          file_pattern: "pkgs/sources.nix .littlesnitch-url-hash"
