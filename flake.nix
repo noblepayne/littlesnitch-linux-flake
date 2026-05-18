@@ -43,6 +43,8 @@
           pkgs.babashka
           pkgs.clj-kondo
           pkgs.cljfmt
+          pkgs.alejandra
+          pkgs.git-cliff
         ];
       };
     });
