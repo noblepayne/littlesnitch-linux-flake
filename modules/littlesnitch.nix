@@ -20,29 +20,40 @@ in {
     environment.systemPackages = [
       cfg.package
     ];
+
+    systemd.tmpfiles.rules = [
+      "d /var/lib/littlesnitch 0755 root root -"
+    ];
+
     systemd.services.littlesnitch = {
       description = "Little Snitch network monitor daemon";
       after = ["sysinit.target"];
+      before = ["network-pre.target"];
+      wants = ["network-pre.target"];
       wantedBy = ["multi-user.target"];
+
       unitConfig = {
         AssertCapability = [
           "CAP_BPF"
-          "CAP_NET_ADMIN"
+          "CAP_DAC_READ_SEARCH"
           "CAP_PERFMON"
+          "CAP_SYS_ADMIN"
           "CAP_SYS_RESOURCE"
         ];
       };
 
       serviceConfig = {
-        Type = "exec";
-        ExecStart = "${cfg.package}/bin/littlesnitch --daemon";
+        Type = "notify";
+        ExecStart = "${cfg.package}/bin/littlesnitch --daemon --use-cap-sys-admin";
         Restart = "on-failure";
         RestartSec = "5s";
+        StateDirectory = "littlesnitch";
 
         CapabilityBoundingSet = [
           "CAP_BPF"
+          "CAP_DAC_READ_SEARCH"
           "CAP_PERFMON"
-          "CAP_NET_ADMIN"
+          "CAP_SYS_ADMIN"
           "CAP_SYS_RESOURCE"
         ];
         MemoryDenyWriteExecute = true;

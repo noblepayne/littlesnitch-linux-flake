@@ -6,9 +6,6 @@
   zstd,
   linux-pam,
   sqlite,
-  libcap_ng,
-  audit,
-  zlib,
 }: let
   sources = import ./sources.nix;
 in
@@ -23,22 +20,27 @@ in
 
     nativeBuildInputs = [patchelf zstd];
 
+    sourceRoot = ".";
+
     dontBuild = true;
     dontStrip = true;
     dontPatchELF = true;
 
     installPhase = ''
       runHook preInstall
-      install -Dm755 bin/littlesnitch $out/bin/littlesnitch
+      install -Dm755 usr/bin/littlesnitch $out/bin/littlesnitch
+
+      install -Dm644 usr/share/doc/littlesnitch/copyright \
+        $out/share/doc/littlesnitch/copyright
+
+      install -Dm644 usr/share/metainfo/at.obdev.littlesnitch.metainfo.xml \
+        $out/share/metainfo/at.obdev.littlesnitch.metainfo.xml
 
       libs="${lib.makeLibraryPath [
         stdenv.cc.libc
         stdenv.cc.cc.lib
         linux-pam
         sqlite
-        libcap_ng
-        audit
-        zlib
       ]}"
 
       patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" \
