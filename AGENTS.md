@@ -114,28 +114,24 @@ The module creates a systemd service that matches the upstream `.service` file w
 
 User-configurable options: `services.littlesnitch.enable`, `services.littlesnitch.package`
 
-## Changelog Workflow
+## Changelog Strategy
 
-Using git-cliff with non-conventional commits:
-- `commit_parsers` use regex to match commit message prefixes
-- `skip = true` for any commit containing "CHANGELOG" (prevents meta commits from appearing)
+**v1.0.9-1 was hand-written** — the first release had too many breaking changes to capture via commit messages alone. The CHANGELOG.md for this release is curated by hand.
+
+**Future releases** — git-cliff is configured in `cliff.toml` for non-conventional commits. Going forward, commits should have descriptive messages (the agent writes these). Then:
+
+```bash
+nix develop -c git-cliff --tag vNEW-VERSION > CHANGELOG.md
+```
+
+The config:
+- `skip = true` for any commit containing "CHANGELOG" (prevents meta commits)
 - Body preprocessor strips commit bodies: `'\n[\s\S]*'`
 - Groups: Features, Bug Fixes, Version Updates, Cleanup, Chores, CI, Documentation, Initial Commit, Changes (catch-all)
 - `sort_commits = "newest"`
+- `conventional_commits = false` — repo doesn't use strict conventional commits
 
-### Creating a release
-```bash
-# 1. Update sources.nix (manual or let scraper do it)
-# 2. Update derivation if package layout changed
-# 3. Generate changelog
-nix develop -c git-cliff > CHANGELOG.md
-
-# 4. Commit and tag
-git add CHANGELOG.md cliff.toml
-git commit -m "chore: update CHANGELOG.md for vVERSION"
-git tag vVERSION
-git push origin main --tags
-```
+If git-cliff output is inadequate for a future release, hand-write the section instead. The tool is there for convenience, not as a requirement.
 
 ## CI Auto-Update Workflow
 
