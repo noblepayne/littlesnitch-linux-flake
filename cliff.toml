@@ -32,9 +32,10 @@ conventional_commits = false
 filter_unconventional = false
 split_commits = false
 commit_preprocessors = [
-  { pattern = '\n[\s\S]*', replace = "", replace_command = "" },
+  { pattern = '\n[\s\S]*', replace = "" },
 ]
 commit_parsers = [
+  { message = "CHANGELOG|changelog", skip = true },
   { message = "^feat", group = "Features" },
   { message = "^fix", group = "Bug Fixes" },
   { message = "^update", group = "Version Updates" },
@@ -43,9 +44,8 @@ commit_parsers = [
   { message = "^ci", group = "CI" },
   { message = "^doc", group = "Documentation" },
   { message = "^init", group = "Initial Commit" },
-  { message = ".*", group = "Changes" },
+  { message = ".*", group = "Changes" }
 ]
 protect_breaking_changes = false
-filter_commits = false
 tag_pattern = "v?[0-9].*"
 sort_commits = "newest"
